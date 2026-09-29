@@ -1,3 +1,4 @@
+from rag import search_finance
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -43,6 +44,26 @@ tools = [
                 ]
             }
         }
+    },
+
+    {
+        "type": "function",
+        "function": {
+            "name": "search_finance",
+            "description": "금융 상품 관련 정보를 검색한다.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "검색할 금융 질문"
+                    }
+                },
+                "required": [
+                    "query"
+                ]
+            }
+        }
     }
 ]
 
@@ -50,7 +71,7 @@ tools = [
 messages = [
     {
         "role": "user",
-        "content": "5000만원을 연 3% 금리로 1년 넣으면 이자가 얼마야?"
+        "content": "적금이 뭐야?"
     }
 ]
 
@@ -71,16 +92,27 @@ if assistant_message.tool_calls:
 
     tool_call = assistant_message.tool_calls[0]
 
+    function_name = tool_call.function.name
+
     args = json.loads(
         tool_call.function.arguments
     )
 
-    # 실제 Python 함수 실행
-    result = calculate_interest(
-        args["principal"],
-        args["rate"],
-        args["years"]
-    )
+
+    if function_name == "calculate_interest":
+
+        result = calculate_interest(
+            args["principal"],
+            args["rate"],
+            args["years"]
+        )
+
+
+    elif function_name == "search_finance":
+
+        result = search_finance(
+            args["query"]
+        )
 
 
     # GPT 대화 흐름에 Tool 결과 추가

@@ -16,10 +16,3 @@ def calculate_interest(
     }
 
 
-result = calculate_interest(
-    50000000,
-    3,
-    1
-)
-
-print(result)

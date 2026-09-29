@@ -52,10 +52,3 @@ def search_finance(query):
     return results[0].page_content
 
 
-if __name__ == "__main__":
-
-    result = search_finance(
-        "적금이 뭐야?"
-    )
-
-    print(result)
