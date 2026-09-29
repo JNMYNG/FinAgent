@@ -1,6 +1,7 @@
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 import os
 
@@ -16,12 +17,14 @@ with open(
 ) as f:
     text = f.read()
 
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=200,
+    chunk_overlap=30
+)
 
-document = [
-    Document(
-        page_content=text
-    )
-]
+documents = splitter.create_documents(
+    [text]
+)
 
 
 # Embedding 모델
@@ -32,7 +35,7 @@ embeddings = OpenAIEmbeddings(
 
 # Vector DB 생성
 vectorstore = Chroma.from_documents(
-    documents=document,
+    documents=documents,
     embedding=embeddings,
     collection_name="finance"
 )
