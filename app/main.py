@@ -13,13 +13,13 @@ client = OpenAI(
 )
 
 
-# 1. Tool 정의
+# 사용할 Tool 정의
 tools = [
     {
         "type": "function",
         "function": {
             "name": "calculate_interest",
-            "description": "예금 원금, 금리, 기간을 받아 이자를 계산한다.",
+            "description": "예금 원금, 금리, 기간을 받아 예상 이자를 계산한다.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -29,11 +29,11 @@ tools = [
                     },
                     "rate": {
                         "type": "number",
-                        "description": "연 이율(%)"
+                        "description": "연 이율"
                     },
                     "years": {
                         "type": "integer",
-                        "description": "기간(년)"
+                        "description": "예치 기간"
                     }
                 },
                 "required": [
@@ -47,7 +47,6 @@ tools = [
 ]
 
 
-# 2. 사용자 질문
 messages = [
     {
         "role": "user",
@@ -56,7 +55,7 @@ messages = [
 ]
 
 
-# 3. GPT 호출
+# 1차 GPT 호출
 response = client.chat.completions.create(
     model="gpt-4.1-mini",
     messages=messages,
@@ -64,25 +63,51 @@ response = client.chat.completions.create(
 )
 
 
-message = response.choices[0].message
+assistant_message = response.choices[0].message
 
 
-# 4. GPT가 Tool 선택했는지 확인
-if message.tool_calls:
+# Tool 호출 요청이 있는 경우
+if assistant_message.tool_calls:
 
-    tool_call = message.tool_calls[0]
+    tool_call = assistant_message.tool_calls[0]
 
     args = json.loads(
         tool_call.function.arguments
     )
 
+    # 실제 Python 함수 실행
     result = calculate_interest(
         args["principal"],
         args["rate"],
         args["years"]
     )
 
-    print(result)
+
+    # GPT 대화 흐름에 Tool 결과 추가
+    messages.append(
+        assistant_message
+    )
+
+    messages.append(
+        {
+            "role": "tool",
+            "tool_call_id": tool_call.id,
+            "content": json.dumps(result)
+        }
+    )
+
+
+    # 2차 GPT 호출
+    final_response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=messages
+    )
+
+
+    print(
+        final_response.choices[0].message.content
+    )
+
 
 else:
-    print(message.content)
+    print(assistant_message.content)
