@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-
+from langchain_core.messages import SystemMessage
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langgraph.graph import StateGraph, MessagesState, START
@@ -74,8 +74,26 @@ llm_with_tools = llm.bind_tools(tools)
 
 def agent_node(state: MessagesState):
 
+    system_message = SystemMessage(
+        content="""
+        당신은 금융 AI Agent입니다.
+
+        다음 규칙에 따라 반드시 적절한 Tool을 사용하세요.
+
+        1. 예금, 적금, 대출 등 금융상품에 대한 정보성 질문은
+           search_finance_tool을 사용하세요.
+
+        2. 원금, 금리, 기간을 이용한 이자 계산 질문은
+           calculate_interest_tool을 사용하세요.
+
+        3. Tool 실행 결과가 있다면 해당 결과를 기반으로 답변하세요.
+
+        4. 금융 문서에서 확인할 수 있는 내용을 임의의 지식으로 답하지 마세요.
+        """
+    )
+
     response = llm_with_tools.invoke(
-        state["messages"]
+        [system_message] + state["messages"]
     )
 
     return {
